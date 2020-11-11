@@ -31,6 +31,7 @@ if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET) {
 // or set them as environment variables before running.
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const API_KEY = process.env.API_KEY;
 
 // Scopes for this app will default to `contacts`
 // To request others, set the SCOPE environment variable instead
@@ -50,7 +51,7 @@ console.log(SCOPES);
 
 // On successful install, users will be redirected to /oauth-callback
 // const REDIRECT_URI = `https://bkss.site/oauth-callback`;
-const REDIRECT_URI = `https://digibiznas.com/oauth-callback`;
+const REDIRECT_URI = process.env.REDIRECT_URI;
 
 //===========================================================================//
 
@@ -219,7 +220,7 @@ var options = {
     properties: 'event_name',
     paginateAssociations: 'false',
     archived: 'false',
-    hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'
+    hapikey: API_KEY
   },
   headers: {accept: 'application/json'}
 };
@@ -250,7 +251,7 @@ var options = {
   qs: {
     paginateAssociations: 'false',
     limit: '500',
-    hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'
+    hapikey: API_KEY
   },
   headers: {accept: 'application/json'}
 };
@@ -276,7 +277,7 @@ newEventsAttended.forEach((item, index) => {
   var options = {
   method: 'PUT',
   url: `https://api.hubapi.com/crm/v3/objects/contact/${contactId}/associations/p8731805_my_events/${item}/event_to_contact`,
-  qs: {paginateAssociations: 'false', hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
+  qs: {paginateAssociations: 'false', hapikey: API_KEY},
   headers: {accept: 'application/json'}
 };
 
@@ -308,7 +309,7 @@ const createObject = async (accessToken) => {
     var options = {
   method: 'POST',
   url: 'https://api.hubapi.com/crm-object-schemas/v3/schemas',
-  qs: {hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
+  qs: {hapikey: API_KEY},
   headers: {accept: 'application/json', 'content-type': 'application/json'},
   body: {
     labels: {singular: 'Event', plural: 'Events'},
@@ -354,7 +355,7 @@ const appendEventAttendProperty = async (accessToken) => {
 var options = {
   method: 'GET',
   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-  qs: {archived: 'false', hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
+  qs: {archived: 'false', hapikey: API_KEY},
   headers: {accept: 'application/json'}
 };
 
@@ -382,7 +383,7 @@ request(options, function (error, response, body) {
   var options = {
   method: 'PATCH',
   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-  qs: {hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
+  qs: {hapikey: API_KEY},
   headers: {accept: 'application/json', 'content-type': 'application/json'},
   body: {
     options: dropoptions,
