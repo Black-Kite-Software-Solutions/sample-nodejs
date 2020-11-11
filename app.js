@@ -1,13 +1,14 @@
 var createError = require('http-errors');
 var express = require('express');
+const bodyParser = require("body-parser");
 var logger = require('morgan');
 const session = require('express-session');
 
 var app = express();
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
   secret: Math.random().toString(36).substring(2),
   resave: false,
