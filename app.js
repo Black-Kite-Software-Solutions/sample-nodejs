@@ -1,56 +1,75 @@
-var createError = require('http-errors');
-var express = require('express');
-const bodyParser = require("body-parser");
-var logger = require('morgan');
-const session = require('express-session');
-const request = require('request-promise-native');
 require('dotenv').config();
+const express = require('express');
+const bodyParser = require("body-parser");
+const request = require('request-promise-native');
 const NodeCache = require('node-cache');
+const session = require('express-session');
+const opn = require('open');
+const app = express();
 
-var app = express();
+const baseUrl = 'https://api.hubapi.com/crm-object-schemas/v3/schemas';
+const objectType = "events";
 
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(session({
-  secret: Math.random().toString(36).substring(2),
-  resave: false,
-  saveUninitialized: true
-}));
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
-
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.setHeader('Content-Type', 'text/html');
-  res.write(`<h4>Error: ${err.message}</h4>`);
-  res.end();
-});
+const PORT = 3000;
 
 const refreshTokenStore = {};
 const accessTokenCache = new NodeCache({ deleteOnExpire: true });
+
 if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET) {
     throw new Error('Missing CLIENT_ID or CLIENT_SECRET environment variable.')
 }
 
+//===========================================================================//
+//  HUBSPOT APP CONFIGURATION
+//
+//  All the following values must match configuration settings in your app.
+//  They will be used to build the OAuth URL, which users visit to begin
+//  installing. If they don't match your app's configuration, users will
+//  see an error page.
+
+// Replace the following with the values from your app auth config, 
+// or set them as environment variables before running.
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const API_KEY = process.env.API_KEY;
+
+// Scopes for this app will default to `contacts`
+// To request others, set the SCOPE environment variable instead
 let SCOPES = ['contacts'];
 if (process.env.SCOPE) {
     SCOPES = (process.env.SCOPE.split(/ |, ?|%20/)).join(' ');
 }
 
-const REDIRECT_URI = process.env.REDIRECT_URI;
+console.log(SCOPES);
+
+// let OPTIONAL_SCOPES = [];
+// if (process.env.OPTIONAL_SCOPES) {
+//     OPTIONAL_SCOPES = (process.env.OPTIONAL_SCOPES.split(/ |, ?|%20/)).join(' ');
+// }
+
+// console.log(OPTIONAL_SCOPES);
+
+// On successful install, users will be redirected to /oauth-callback
+// const REDIRECT_URI = `https://bkss.site/oauth-callback`;
+const REDIRECT_URI = `https://digibiznas.com/oauth-callback`;
+
+//===========================================================================//
+
+// parse requests of content-type - application/json
+app.use(bodyParser.json());
+
+// parse requests of content-type - application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Use a session to keep track of client ID
+app.use(session({
+  secret: Math.random().toString(36).substring(2),
+  resave: false,
+  saveUninitialized: true
+}));
+ 
+//================================//
+//   Running the OAuth 2.0 Flow   //
+//================================//
 
 // Step 1
 // Build the authorization URL to redirect a user
@@ -72,6 +91,11 @@ app.get('/install', (req, res) => {
   res.redirect(authUrl);
   console.log('===> Step 2: User is being prompted for consent by HubSpot');
 });
+
+// Step 2
+// The user is prompted to give the app access to the requested
+// resources. This is all done by HubSpot, so no work is necessary
+// on the app's end
 
 // Step 3
 // Receive the authorization code from the OAuth 2.0 Server,
@@ -179,10 +203,6 @@ const getContact = async (accessToken) => {
   }
 };
 
-//================================================//
-//   Querying For Events using the HubSpot API    //
-//================================================//
-
 const getEvents = async (accessToken) => {
   console.log('');
   console.log('=== Retrieving a event from HubSpot using the access token ===');
@@ -199,7 +219,7 @@ var options = {
     properties: 'event_name',
     paginateAssociations: 'false',
     archived: 'false',
-    hapikey: API_KEY
+    hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'
   },
   headers: {accept: 'application/json'}
 };
@@ -230,7 +250,7 @@ var options = {
   qs: {
     paginateAssociations: 'false',
     limit: '500',
-    hapikey: API_KEY
+    hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'
   },
   headers: {accept: 'application/json'}
 };
@@ -256,7 +276,7 @@ newEventsAttended.forEach((item, index) => {
   var options = {
   method: 'PUT',
   url: `https://api.hubapi.com/crm/v3/objects/contact/${contactId}/associations/p8731805_my_events/${item}/event_to_contact`,
-  qs: {paginateAssociations: 'false', hapikey: API_KEY},
+  qs: {paginateAssociations: 'false', hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
   headers: {accept: 'application/json'}
 };
 
@@ -288,7 +308,7 @@ const createObject = async (accessToken) => {
     var options = {
   method: 'POST',
   url: 'https://api.hubapi.com/crm-object-schemas/v3/schemas',
-  qs: {hapikey: API_KEY},
+  qs: {hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
   headers: {accept: 'application/json', 'content-type': 'application/json'},
   body: {
     labels: {singular: 'Event', plural: 'Events'},
@@ -334,7 +354,7 @@ const appendEventAttendProperty = async (accessToken) => {
 var options = {
   method: 'GET',
   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-  qs: {archived: 'false', hapikey: API_KEY},
+  qs: {archived: 'false', hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
   headers: {accept: 'application/json'}
 };
 
@@ -362,7 +382,7 @@ request(options, function (error, response, body) {
   var options = {
   method: 'PATCH',
   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-  qs: {hapikey: API_KEY},
+  qs: {hapikey: 'e194a702-f651-4954-bf24-966563ea10fa'},
   headers: {accept: 'application/json', 'content-type': 'application/json'},
   body: {
     options: dropoptions,
@@ -470,10 +490,26 @@ app.post('/webhook-callback', async (req, res) => {
   res.end();
 });
 
+// app.get('/customObjects', async (req, res) => {
+//   //TODO : List
+//   res.setHeader('Content-Type', 'text/html');
+//   res.write(`<h2>HubSpot OAuth 2.0 Quickstart App</h2>`);
+//   if (isAuthorized(req.sessionID)) {
+//     const accessToken = await getAccessToken(req.sessionID);
+//     const objectResponse = await createObject(accessToken);
+//     res.write(`<h4>Access token: ${accessToken}</h4>`);
+//     res.write(`<pre>${objectResponse}</pre>`)
+//   } else {
+//     res.write(`<a href="/install"><h3>Install the app</h3></a>`);
+//   }
+//   res.end();
+// });
+
 app.get('/error', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.write(`<h4>Error: ${req.query.msg}</h4>`);
   res.end();
 });
 
-module.exports = app;
+app.listen(PORT, () => console.log(`=== Starting your app on http://localhost:${PORT} ===`));
+opn(`http://localhost:${PORT}`);
