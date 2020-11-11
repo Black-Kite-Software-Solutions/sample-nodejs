@@ -29,7 +29,9 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.setHeader('Content-Type', 'text/html');
+  res.write(`<h4>Error: ${req.query.msg}</h4>`);
+  res.end();
 });
 
 module.exports = app;
