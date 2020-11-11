@@ -30,7 +30,7 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.setHeader('Content-Type', 'text/html');
-  res.write(`<h4>Error: ${req.query.msg}</h4>`);
+  res.write(`<h4>Error: ${err.message}</h4>`);
   res.end();
 });
 
