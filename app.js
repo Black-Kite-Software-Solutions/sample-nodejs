@@ -32,6 +32,7 @@ if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET) {
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const API_KEY = process.env.API_KEY;
+const EVENT_ID = process.env.EVENT_ID;
 
 // Scopes for this app will default to `contacts`
 // To request others, set the SCOPE environment variable instead
@@ -213,8 +214,8 @@ const getEvents = async (accessToken) => {
 
 var options = {
   method: 'GET',
-//   url: 'https://api.hubapi.com/crm/v3/objects/p8731805_my_events',
-  url: 'https://api.hubapi.com/crm/v3/objects/p8731805_my_event_tests',
+  url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}`,
+  // url: 'https://api.hubapi.com/crm/v3/objects/p8731805_my_event_tests',
   qs: {
     limit: '10',
     properties: 'event_name',
@@ -229,6 +230,7 @@ request(options, function (error, response, body) {
   if (error) throw new Error(error);
 
   console.log(body);
+  return body;
 });
 
 
@@ -247,7 +249,7 @@ const getContactAssociations = async (contactId,eventsAttended) => {
 
 var options = {
   method: 'GET',
-  url: `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/p8731805_my_events`,
+  url: `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}/associations/${EVENT_ID}`,
   qs: {
     paginateAssociations: 'false',
     limit: '500',
@@ -276,7 +278,7 @@ newEventsAttended.forEach((item, index) => {
   console.log('associated new events with contact');
   var options = {
   method: 'PUT',
-  url: `https://api.hubapi.com/crm/v3/objects/contact/${contactId}/associations/p8731805_my_events/${item}/event_to_contact`,
+  url: `https://api.hubapi.com/crm/v3/objects/contact/${contactId}/associations/${EVENT_ID}/${item}/event_to_contact`,
   qs: {paginateAssociations: 'false', hapikey: API_KEY},
   headers: {accept: 'application/json'}
 };
@@ -285,8 +287,29 @@ request(options, function (error, response, body) {
   if (error) throw new Error(error);
   console.log(body);
 });
+
 console.log(item);
     });
+
+    //set last event property
+var lastEventId = newEventsAttended[-1];
+    var options = {
+  method: 'PUT',
+  url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}/${lastEventId}`,
+  qs: {
+    properties: 'event_name',
+    paginateAssociations: 'false',
+    archived: 'false',
+    hapikey: API_KEY
+  },
+  headers: {accept: 'application/json'}
+};
+
+request(options, function (error, response, body) {
+  if (error) throw new Error(error);
+  console.log("fired outh >>> ",body);
+  var data = JSON.parse(body);
+});
   }
 });
 
@@ -314,7 +337,7 @@ const createObject = async (accessToken) => {
   body: {
     labels: {singular: 'Event', plural: 'Events'},
     requiredProperties: ['event_name'],
-    searchableProperties: ['event_name'],
+    searchableProperties: ['event_name','event_date'],
     name: 'my_events',
     primaryDisplayProperty: 'event_name',
     properties: [
@@ -323,6 +346,12 @@ const createObject = async (accessToken) => {
         label: 'Name',
         isPrimaryDisplayLabel: true,
         hasUniqueValue: true
+      },
+      {
+        name: 'event_date',
+        label: 'Date',
+        isPrimaryDisplayLabel: true,
+        hasUniqueValue: false
       }
     ],
     associatedObjects: ['CONTACT'],
@@ -373,6 +402,9 @@ request(options, function (error, response, body) {
   });
   
   console.log(dropoptions);
+
+  //
+
   dropoptions.push({
           label: 'New Event', value: 'New Event', displayOrder: -1, hidden: false
       });
