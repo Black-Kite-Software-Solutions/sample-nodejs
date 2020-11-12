@@ -293,7 +293,8 @@ console.log(item);
     });
 
     //set last event property
-var lastEventId = newEventsAttended[-1];
+var lastEventId = newEventsAttended[newEventsAttended.length-1];
+console.log("lastEventId >>> ",lastEventId);
     var options = {
   method: 'GET',
   url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}/${lastEventId}`,
