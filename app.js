@@ -276,6 +276,7 @@ request(options, function (error, response, body) {
       
 newEventsAttended.forEach((item, index) => {
   console.log('associated new events with contact');
+  console.log(EVENT_ID);
   var options = {
   method: 'PUT',
   url: `https://api.hubapi.com/crm/v3/objects/contact/${contactId}/associations/${EVENT_ID}/${item}/event_to_contact`,
@@ -294,7 +295,7 @@ console.log(item);
     //set last event property
 var lastEventId = newEventsAttended[-1];
     var options = {
-  method: 'PUT',
+  method: 'GET',
   url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}/${lastEventId}`,
   qs: {
     properties: 'event_name',
