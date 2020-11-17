@@ -373,7 +373,7 @@ request(options, function (error, response, body) {
   }
 };
 
-const appendEventAttendProperty = async (accessToken) => {
+const appendEventAttendProperty = async (accessToken,eventData) => {
   console.log('');
   console.log('=== appending event name in contact events_attended property ===');
   try {
@@ -383,32 +383,31 @@ const appendEventAttendProperty = async (accessToken) => {
       Accept: 'application/json'
     };
     
-var options = {
-  method: 'GET',
-  url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-  qs: {archived: 'false', hapikey: API_KEY},
-  headers: {accept: 'application/json'}
-};
+// var options = {
+//   method: 'GET',
+//   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
+//   qs: {archived: 'false', hapikey: API_KEY},
+//   headers: {accept: 'application/json'}
+// };
 
-request(options, function (error, response, body) {
-  if (error) throw new Error(error);
+// request(options, function (error, response, body) {
+//   if (error) throw new Error(error);
   
-  var obj = JSON.parse(body);
-  console.log(obj['options']);
-  var dropDownOptions = obj['options'];
+//   var obj = JSON.parse(body);
+//   console.log(obj['options']);
+//   var dropDownOptions = obj['options'];
   var dropoptions = [];
-  dropDownOptions.forEach((item, index)=>{
-      dropoptions.push({
-          label: item['label'], value: item['value'], displayOrder: -1, hidden: false
-      });
-  });
+  // dropDownOptions.forEach((item, index)=>{
+  //     dropoptions.push({
+  //         label: item['label'], value: item['value'], displayOrder: -1, hidden: false
+  //     });
+  // });
   
   console.log(dropoptions);
-
   //
 
   dropoptions.push({
-          label: 'New Event', value: 'New Event', displayOrder: -1, hidden: false
+          label: eventData['name'], value: eventData['id'], displayOrder: -1, hidden: false
       });
   
   
@@ -432,7 +431,7 @@ request(options, function (error, response, body) {
   console.log(body);
 });
   
-});
+// });
 
     
   } catch (e) {
@@ -502,7 +501,7 @@ app.get('/contact/append', async (req, res) => {
   res.write(`<h2>HubSpot OAuth 2.0 Quickstart App</h2>`);
   if (isAuthorized(req.sessionID)) {
     const accessToken = await getAccessToken(req.sessionID);
-    const objectResponse = await appendEventAttendProperty(accessToken);
+    // const objectResponse = await appendEventAttendProperty(accessToken);
     res.write(`<pre>objectResponse : ${objectResponse}</pre>`)
   } else {
     res.write(`<a href="/install"><h3>Install the app</h3></a>`);
@@ -522,6 +521,24 @@ app.post('/webhook-callback', async (req, res) => {
   var eventsAttended = sub.propertyValue.split(';');
   //STEP 2 Get associted events with contact;
   var associations = await getContactAssociations(objectId,eventsAttended);
+  res.end();
+});
+
+app.post('/webhook-eventnew', async (req, res) => {
+  console.log('===>Handling the webhook request sent by the workflow for new event<===');
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Accept', 'application/json');
+  //SETP 1 Split recieved data into the required types
+  console.log(req.body);
+  var data = req.body;
+  var id = data.objectId;
+  var name = data.properties.event_name.value;
+  var eventData = [];
+  eventData["id"] = id;
+  eventData["name"] = name;
+  const accessToken = await getAccessToken(req.sessionID);
+  //STEP 2 Updated attendevents contact properyt;
+  var associations = await appendEventAttendProperty(accessToken,eventData);
   res.end();
 });
 
