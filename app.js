@@ -299,7 +299,7 @@ console.log("lastEventId >>> ",lastEventId);
   method: 'GET',
   url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}/${lastEventId}`,
   qs: {
-    properties: 'event_name',
+    properties: 'event_name,event_date',
     paginateAssociations: 'false',
     archived: 'false',
     hapikey: API_KEY
@@ -311,6 +311,33 @@ request(options, function (error, response, body) {
   if (error) throw new Error(error);
   console.log("fired outh >>> ",body);
   var data = JSON.parse(body);
+  lastEventName = data.properties.event_name;
+  lastEventDate = data.properties.event_date;
+
+  var contactProperties = {
+    'last_event_id': lastEventId,
+    'last_event_name': lastEventName,
+    'last_event_date': lastEventDate,
+  };
+
+  var options = {
+    method: 'PATCH',
+    url: `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+    qs: {hapikey: API_KEY},
+    headers: {accept: 'application/json', 'content-type': 'application/json'},
+    body: {
+      properties: contactProperties,
+    },
+    json: true
+  };
+  
+  request(options, function (error, response, body) {
+    if (error) throw new Error(error);
+  
+    console.log(body);
+  }); 
+
+
 });
   }
 });
