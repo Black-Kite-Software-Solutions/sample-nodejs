@@ -383,25 +383,25 @@ const appendEventAttendProperty = async (accessToken,eventData) => {
       Accept: 'application/json'
     };
     
-// var options = {
-//   method: 'GET',
-//   url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
-//   qs: {archived: 'false', hapikey: API_KEY},
-//   headers: {accept: 'application/json'}
-// };
+var options = {
+  method: 'GET',
+  url: 'https://api.hubapi.com/crm/v3/properties/contacts/events_attended',
+  qs: {archived: 'false', hapikey: API_KEY},
+  headers: {accept: 'application/json'}
+};
 
-// request(options, function (error, response, body) {
-//   if (error) throw new Error(error);
+request(options, function (error, response, body) {
+  if (error) throw new Error(error);
   
-//   var obj = JSON.parse(body);
-//   console.log(obj['options']);
-//   var dropDownOptions = obj['options'];
+  var obj = JSON.parse(body);
+  console.log(obj['options']);
+  var dropDownOptions = obj['options'];
   var dropoptions = [];
-  // dropDownOptions.forEach((item, index)=>{
-  //     dropoptions.push({
-  //         label: item['label'], value: item['value'], displayOrder: -1, hidden: false
-  //     });
-  // });
+  dropDownOptions.forEach((item, index)=>{
+      dropoptions.push({
+          label: item['label'], value: item['value'], displayOrder: -1, hidden: false
+      });
+  });
   
   console.log(dropoptions);
   //
@@ -431,7 +431,7 @@ request(options, function (error, response, body) {
   console.log(body);
 });
   
-// });
+});
 
     
   } catch (e) {
