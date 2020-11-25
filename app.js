@@ -335,10 +335,64 @@ request(options, function (error, response, body) {
     if (error) throw new Error(error);
   
     console.log(body);
+  });
+
+});
+
+var firstEventId = 0;
+if (Array.isArray(associatedEvents) && associatedEvents.length){
+  firstEventId = associatedEvents[0];
+}else{
+  firstEventId = lastEventId;
+}
+
+console.log("firstEventId >>> ",firstEventId);
+    var options = {
+  method: 'GET',
+  url: `https://api.hubapi.com/crm/v3/objects/${EVENT_ID}/${firstEventId}`,
+  qs: {
+    properties: 'event_name,event_date',
+    paginateAssociations: 'false',
+    archived: 'false',
+    hapikey: API_KEY
+  },
+  headers: {accept: 'application/json'}
+};
+
+request(options, function (error, response, body) {
+  if (error) throw new Error(error);
+  console.log("fired outh >>> ",body);
+  var data = JSON.parse(body);
+  firstEventName = data.properties.event_name;
+  firstEventDate = data.properties.event_date;
+
+  var contactProperties = {
+    'first_event_id': firstEventId,
+    'first_event_name': firstEventName,
+    'first_event_date': firstEventDate,
+  };
+
+  var options = {
+    method: 'PATCH',
+    url: `https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`,
+    qs: {hapikey: API_KEY},
+    headers: {accept: 'application/json', 'content-type': 'application/json'},
+    body: {
+      properties: contactProperties,
+    },
+    json: true
+  };
+  
+  request(options, function (error, response, body) {
+    if (error) throw new Error(error);
+  
+    console.log(body);
   }); 
 
 
 });
+
+
   }
 });
 
